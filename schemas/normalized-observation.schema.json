@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://internal/schemas/normalized-observation.schema.json",
+  "title": "NormalizedObservation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_id",
+    "phone_number_token",
+    "provider",
+    "normalized_classification",
+    "observed_at",
+    "cache_hit"
+  ],
+  "properties": {
+    "case_id": { "type": "string", "minLength": 1 },
+    "phone_number_token": { "type": "string", "minLength": 16 },
+    "provider": { "type": "string", "minLength": 1 },
+    "provider_request_id": { "type": ["string", "null"] },
+    "provider_classification": {
+      "type": ["string", "null"],
+      "description": "The provider's exact native classification — never discarded, even after normalization."
+    },
+    "normalized_classification": {
+      "type": "string",
+      "enum": [
+        "SPAM", "SCAM", "FRAUD", "ROBOCALL", "TELEMARKETING",
+        "SUSPICIOUS", "LEGITIMATE", "UNKNOWN", "UNAVAILABLE", "ERROR"
+      ]
+    },
+    "category": { "type": ["string", "null"] },
+    "provider_confidence_raw": { "type": ["string", "number", "null"] },
+    "normalized_confidence": {
+      "type": ["number", "null"],
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Only populated when a pre-registered, defensible mapping exists — see docs/PROVIDER_SEMANTICS.md."
+    },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "provider_timestamp": { "type": ["string", "null"], "format": "date-time" },
+    "expires_at": { "type": ["string", "null"], "format": "date-time" },
+    "latency_ms": { "type": ["integer", "null"], "minimum": 0 },
+    "http_status": { "type": ["integer", "null"] },
+    "error_type": {
+      "type": ["string", "null"],
+      "enum": [
+        "TIMEOUT", "UNAVAILABLE", "AUTH_FAILURE", "RATE_LIMITED",
+        "SERVER_ERROR", "INVALID_RESPONSE", "NETWORK_ERROR", null
+      ]
+    },
+    "cache_hit": { "type": "boolean" },
+    "source_version": { "type": ["string", "null"] }
+  }
+}

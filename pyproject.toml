@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reputation-experiment"
+version = "0.1.0"
+description = "Research-only reputation-provider comparison harness. Not a production dependency of SignalGate Pulse or Multi-Port."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary - internal research use only" }
+dependencies = [
+    "requests>=2.31,<3",
+    "jsonschema>=4.21,<5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0,<9",
+    "pytest-cov>=5.0,<6",
+]
+
+[project.scripts]
+reputation-experiment = "reputation_experiment.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

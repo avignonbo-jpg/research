@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://internal/schemas/metrics.schema.json",
+  "title": "DetectionScorecard",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "provider",
+    "confusion_matrix",
+    "coverage_rate",
+    "indeterminate_rate",
+    "failure_rate",
+    "all_eligible_count",
+    "answered_count",
+    "decidable_count"
+  ],
+  "properties": {
+    "provider": { "type": "string" },
+    "confusion_matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["true_positive", "false_positive", "true_negative", "false_negative"],
+      "properties": {
+        "true_positive": { "type": "integer", "minimum": 0 },
+        "false_positive": { "type": "integer", "minimum": 0 },
+        "true_negative": { "type": "integer", "minimum": 0 },
+        "false_negative": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "tpr": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+    "fpr": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+    "precision": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+    "recall": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+    "f1": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+    "coverage_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+    "indeterminate_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+    "failure_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+    "all_eligible_count": { "type": "integer", "minimum": 0 },
+    "answered_count": { "type": "integer", "minimum": 0 },
+    "decidable_count": { "type": "integer", "minimum": 0 }
+  }
+}

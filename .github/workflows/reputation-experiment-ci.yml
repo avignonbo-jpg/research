@@ -1,0 +1,142 @@
+name: reputation-experiment-ci
+
+# This repository is a standalone research/validation harness — see the
+# 'Architectural guardrail' section of the source planning document. This
+# workflow enforces that at CI time, not just in code review: the
+# isolation and secret-scan gates below are hard failures, not warnings.
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests + security gates
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install package (with dev extras)
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run unit tests
+        run: pytest tests/unit -v
+
+      - name: Run adapter contract tests
+        run: pytest tests/contract -v
+
+      - name: Run isolation-guard tests
+        run: pytest tests/isolation -v
+
+      # Redundant with the isolation test above by design: that test
+      # exercises find_violations() as a library call, this step runs the
+      # script exactly as a human or a different CI system would invoke
+      # it, so a bug in argument parsing / exit-code handling can't hide
+      # behind the library-level test alone.
+      - name: Isolation guard (standalone script)
+        run: python scripts/verify_isolation.py
+
+      - name: Sensitive-data scan (standalone script)
+        run: python scripts/scan_sensitive_data.py
+
+      - name: Validate synthetic corpus against ground-truth protocol
+        run: |
+          python -c "
+          from reputation_experiment.corpus.loader import load_corpus
+          from reputation_experiment.corpus.validation import validate_corpus
+          cases = load_corpus('src/reputation_experiment/corpus/public_synthetic_cases.jsonl')
+          validate_corpus(cases, strict=True)
+          print(f'OK: {len(cases)} corpus cases validated')
+          "
+
+      - name: Smoke-test report generation against fixtures
+        run: |
+          python scripts/generate_report.py \
+            --corpus src/reputation_experiment/corpus/public_synthetic_cases.jsonl \
+            --observations tests/fixtures/sample_observations.jsonl
+
+  json-schema-lint:
+    name: Validate JSON schema files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install jsonschema
+        run: python -m pip install "jsonschema>=4.21,<5"
+
+      - name: Validate each schema file is well-formed JSON Schema
+        run: |
+          python -c "
+          import json, sys
+          from pathlib import Path
+          from jsonschema.validators import validator_for
+
+          failed = False
+          for path in sorted(Path('schemas').glob('*.json')):
+              schema = json.loads(path.read_text())
+              cls = validator_for(schema)
+              try:
+                  cls.check_schema(schema)
+                  print(f'OK: {path}')
+              except Exception as exc:
+                  failed = True
+                  print(f'INVALID: {path}: {exc}')
+          sys.exit(1 if failed else 0)
+          "
+
+  manual-experiment-run:
+    name: Manual experiment run (live providers)
+    # Deliberately NOT wired to push/pull_request — this is the
+    # credentialed run against real (non-FTC) provider APIs, gated behind
+    # a protected GitHub Environment requiring manual approval, per
+    # EXPERIMENT_PLAN.md §27. workflow_dispatch only.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: reputation-experiment-live
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run experiment against live providers
+        env:
+          HIYA_API_KEY: ${{ secrets.HIYA_API_KEY }}
+          NOMOROBO_API_KEY: ${{ secrets.NOMOROBO_API_KEY }}
+          CALL_CONTROL_API_KEY: ${{ secrets.CALL_CONTROL_API_KEY }}
+          IPQS_API_KEY: ${{ secrets.IPQS_API_KEY }}
+          # FIRST_ORION_* / TNS_* intentionally omitted: those adapters are
+          # still stubs (see adapters/first_orion.py, adapters/tns.py) and
+          # will raise NotImplementedError until a real integration exists.
+        run: |
+          python -m reputation_experiment.cli run \
+            --corpus src/reputation_experiment/corpus/public_synthetic_cases.jsonl \
+            --out results/

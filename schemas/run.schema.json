@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://internal/schemas/run.schema.json",
+  "title": "RunMetadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "experiment_run_id",
+    "corpus_version",
+    "provider_adapter_version",
+    "provider_api_version",
+    "git_commit",
+    "run_started_at",
+    "configuration_hash",
+    "provider_set",
+    "cache_mode",
+    "timeout_seconds",
+    "repetitions"
+  ],
+  "properties": {
+    "experiment_run_id": { "type": "string", "minLength": 1 },
+    "corpus_version": { "type": "string", "minLength": 1 },
+    "provider_adapter_version": { "type": "string", "minLength": 1 },
+    "provider_api_version": { "type": "string", "minLength": 1 },
+    "git_commit": { "type": "string", "minLength": 7 },
+    "run_started_at": { "type": "string", "format": "date-time" },
+    "run_completed_at": { "type": ["string", "null"], "format": "date-time" },
+    "configuration_hash": { "type": "string", "minLength": 1 },
+    "provider_set": { "type": "array", "items": { "type": "string" } },
+    "cache_mode": {
+      "type": "string",
+      "enum": ["LIVE_ONLY", "CACHE_ONLY", "CACHE_THEN_REFRESH", "CACHE_WITH_BACKGROUND_REFRESH"]
+    },
+    "timeout_seconds": { "type": "integer", "minimum": 1 },
+    "repetitions": { "type": "integer", "minimum": 1 }
+  }
+}

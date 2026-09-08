@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://internal/schemas/corpus-case.schema.json",
+  "title": "CorpusCase",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_id",
+    "phone_number_token",
+    "corpus_class",
+    "ground_truth_label",
+    "ground_truth_confidence",
+    "ground_truth_source",
+    "ground_truth_observed_at",
+    "adjudication_status"
+  ],
+  "properties": {
+    "case_id": { "type": "string", "minLength": 1 },
+    "phone_number_token": {
+      "type": "string",
+      "minLength": 16,
+      "description": "Opaque HMAC-derived token. MUST NOT be a raw or lightly-hashed phone number — see domain.models.hmac_phone_token()."
+    },
+    "corpus_class": {
+      "type": "string",
+      "enum": [
+        "KNOWN_MALICIOUS",
+        "LEGITIMATE_BUSINESS",
+        "ORDINARY_PERSONAL",
+        "RECENTLY_REPORTED",
+        "HISTORICAL_RECOVERED",
+        "SPOOFING_EXAMPLE",
+        "GRAY_ZONE"
+      ]
+    },
+    "ground_truth_label": {
+      "type": "string",
+      "enum": ["MALICIOUS", "LEGITIMATE", "AMBIGUOUS", "SPOOFED_NUMBER"]
+    },
+    "ground_truth_confidence": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+    "ground_truth_source": { "type": "string", "minLength": 1 },
+    "ground_truth_observed_at": { "type": "string", "format": "date-time" },
+    "ground_truth_expires_at": { "type": ["string", "null"], "format": "date-time" },
+    "adjudication_status": {
+      "type": "string",
+      "enum": ["VERIFIED", "PROBABLE", "DISPUTED", "EXPIRED"]
+    },
+    "ground_truth_category": { "type": ["string", "null"] },
+    "notes": { "type": ["string", "null"] }
+  }
+}
